@@ -140,11 +140,11 @@
           <div class="fix-height">
             <a href="{% url 'single_product' category_slug=product.category.slug product_slug=product.slug %}" class="title">{{product.product_name}}</a>
             <div class="price-wrap mt-2">
-              <span class="price">{{product.price}}</span>
+              <span class="price">₹{{product.price}}</span>
               
             </div> <!-- price-wrap.// -->
           </div>
-          <a href="#" class="btn btn-block btn-primay">Added to cart </a>
+          <a href="{% url 'add_cart' product_id=product.id %}" class="btn btn-block btn-primary">Add to cart </a>
         </figcaption>
       </figure>
     </div> <!-- col.// -->
