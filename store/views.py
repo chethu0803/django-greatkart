@@ -3,15 +3,27 @@ from .models import Product
 from category.models import Category
 from cart.models import Cart,CartItems
 from cart.views import _cart_id
+from django.core.paginator import Paginator,EmptyPage,PageNotAnInteger
 # Create your views here.
 def store(request,category_slug=None):
-  if category_slug:
-    category_obj=get_object_or_404(Category,slug=category_slug)
-    products=Product.objects.filter(category=category_obj, is_available=True)
-  else:
-    products=Product.objects.all().filter(is_available=True)
-  products_count=products.count()
-  return render(request,'store.html',{'products':products,'products_count':products_count})
+  try:
+    if category_slug:
+      category_obj=get_object_or_404(Category,slug=category_slug)
+      products=Product.objects.filter(category=category_obj, is_available=True).order_by('id')
+      paginator=Paginator(products,2)
+      page=request.GET.get('page',1)
+      paged_products=paginator.get_page(page)
+    else:
+      products=Product.objects.all().filter(is_available=True).order_by('id')
+      paginator=Paginator(products,2)
+      page=request.GET.get('page',1)
+      paged_products=paginator.get_page(page)
+    products_count=products.count()
+  except PageNotAnInteger:
+        page_obj = paginator.get_page(1)  # If page is not an integer, show the first page
+  except EmptyPage:
+        page_obj = paginator.get_page(paginator.num_pages) 
+  return render(request,'store.html',{'products':paged_products,'products_count':products_count,})
 
 def product(request,category_slug,product_slug):
   try:
