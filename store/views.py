@@ -28,11 +28,11 @@ def store(request,category_slug=None):
 
 def product(request,category_slug,product_slug):
   try:
-    product=Product.objects.get(slug=product_slug)
-    cart=Cart.objects.get(cart_id=_cart_id(request))
-    in_cart=CartItems.objects.filter(cart=cart,product=product).exists()
+    product = Product.objects.get(category__slug=category_slug, slug=product_slug)
+    in_cart = CartItems.objects.filter(cart__cart_id=_cart_id(request), product=product).exists()
   except Exception as e:
     raise e
+  
   context={
     'product':product,
     'in_cart':in_cart,

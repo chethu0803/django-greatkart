@@ -7,28 +7,30 @@ from django.core.exceptions import ObjectDoesNotExist
 
 # Create your views here.
 def _cart_id(request):
-  try:
-    cart_id=request.session.session_key
-  except:
-    cart_id=request.session.create()
-  return cart_id
+  if request.session.session_key:
+    return request.session.session_key
+  else:
+    return request.session.create()
 
 
 def add_cart(request,product_id):
   product=get_object_or_404(Product,id=product_id)
-  try:
-    cart=Cart.objects.get(cart_id=_cart_id(request))
-  except Cart.DoesNotExist:
-    cart=Cart.objects.create(cart_id=_cart_id(request))
+  if product.stock>0:
+    try:
+      cart=Cart.objects.get(cart_id=_cart_id(request))
+    except Cart.DoesNotExist:
+      cart=Cart.objects.create(cart_id=_cart_id(request))
 
-  try:
-    cart_items=CartItems.objects.get(product=product,cart=cart)
-    cart_items.quantity+=1
-    cart_items.save()
-  except CartItems.DoesNotExist:
-    cart_items=CartItems.objects.create(product=product,cart=cart,quantity=1)
-  
-  return redirect('cart')
+    try:
+      cart_items=CartItems.objects.get(product=product,cart=cart)
+      cart_items.quantity+=1
+      cart_items.save()
+    except CartItems.DoesNotExist:
+      cart_items=CartItems.objects.create(product=product,cart=cart,quantity=1)
+    
+    return redirect('cart')
+  else:
+    return render(request,'product.html',{'product':product})
 
 
 def cart(request,total=0,quantity=0,cart_items=None):
@@ -40,8 +42,8 @@ def cart(request,total=0,quantity=0,cart_items=None):
       quantity+=item.quantity
     tax=(2*total)/100
     grand_total=total+tax
-  except ObjectDoesNotExist:
-    pass
+  except Cart.DoesNotExist as e:
+    raise e
   
   context={
     'total':total,
