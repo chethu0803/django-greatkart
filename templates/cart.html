@@ -32,7 +32,11 @@
           <div class="aside"><img src="{{item.product.images.url}}" class="img-sm"></div>
           <figcaption class="info">
             <a href="{% url 'single_product' category_slug=item.product.category.slug product_slug=item.product.slug %}" class="title text-dark">{{item.product.product_name}}</a>
-            <p class="text-muted small">Matrix: 25 Mpx <br> Brand: Canon</p>
+            <p class="text-muted small">
+              {% for var in item.variations.all %}
+                {{ var.variation_category | capfirst }} : {{ var.variation_value | capfirst }} <br>
+              {% endfor %}
+            </p>
           </figcaption>
         </figure>
       </td>
@@ -41,11 +45,17 @@
               <div class="col"> 
                 <div class="input-group input-spinner">
                   <div class="input-group-prepend">
-                  <a class="btn btn-light" type="button" id="button-plus" href="{% url 'remove' product_id=item.product.id %}"> <i class="fa fa-minus"></i> </a>
+                  <a class="btn btn-light" type="button" id="button-plus" href="{% url 'remove' product_id=item.product.id cart_item_id=item.id %}"> <i class="fa fa-minus"></i> </a>
                   </div>
                   <input type="text" class="form-control"  value="{{item.quantity}}">
                   <div class="input-group-append">
-                  <a class="btn btn-light" type="button" id="button-minus" href="{% url 'add_cart' product_id=item.product.id%}"> <i class="fa fa-plus"></i> </a>
+                    <form action="{% url 'add_cart' product_id=item.product.id %}" method="POST">
+                      {% csrf_token %}
+                      {% for var in item.variations.all %}
+                        <input type="hidden" name="{{var.variation_category | lower}}" value="{{var.variation_value | capfirst}}"/>
+                      {% endfor %}
+                      <button class="btn btn-light" type="submit" id="button-minus" href=""> <i class="fa fa-plus"></i> </button>
+                    </form>
                   </div>
                 </div> <!-- input-group.// -->
               </div> <!-- col.// -->
@@ -57,7 +67,8 @@
         </div> <!-- price-wrap .// -->
       </td>
       <td class="text-right"> 
-      <a href="{% url 'remove_item' product_id=item.product.id %}" class="btn btn-danger"> Remove</a>
+        <a href="{% url 'remove_item' product_id=item.product.id cart_item_id=item.id %}" class="btn btn-danger"> Remove</a>
+
       </td>
     </tr>
     {% endfor %}
