@@ -16,6 +16,7 @@ class AccountManager(BaseUserManager):
     user=self.create_user(email=email,first_name=first_name,last_name=last_name,username=username,password=password)
     user.is_staff=True
     user.is_admin=True
+    user.is_active=True
     user.is_superadmin=True
     user.save(using=self._db)
     return user

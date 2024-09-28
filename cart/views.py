@@ -85,8 +85,8 @@ def cart(request,total=0,quantity=0,cart_items=None):
       quantity+=item.quantity
     tax=(2*total)/100
     grand_total=total+tax
-  except Cart.DoesNotExist as e:
-    raise e
+  except Cart.DoesNotExist:
+      cart=Cart.objects.create(cart_id=_cart_id(request))
   
   context={
     'total':total,
