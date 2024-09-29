@@ -5,7 +5,8 @@ from .models import Account
 from django.contrib import messages
 from django.contrib import auth
 from django.contrib.auth.decorators import login_required
-
+from cart.models import Cart,CartItems
+from cart.views import _cart_id
 #Email Verification
 from django.contrib.sites.shortcuts import get_current_site
 from django.template.loader import render_to_string
@@ -52,17 +53,55 @@ def register(request):
   return render(request,'register.html',context)
 
 def login(request):
-  if request.method=="POST":
-    email=request.POST['email']
-    password=request.POST['password']
+  if request.method == 'POST':
+    email = request.POST['email']
+    password = request.POST['password']
 
-    user=auth.authenticate(email=email,password=password)
+    user = auth.authenticate(email=email, password=password)
+
     if user is not None:
-      auth.login(request,user)
+      try:
+        cart = Cart.objects.get(cart_id=_cart_id(request))
+        is_cart_item_exists = CartItems.objects.filter(cart=cart).exists()
+        if is_cart_item_exists:
+          cart_item = CartItems.objects.filter(cart=cart)
+
+                    # Getting the product variations by cart id
+          product_variation = []
+          for item in cart_item:
+            variation = item.variations.all()
+            product_variation.append(list(variation))
+
+                    # Get the cart items from the user to access his product variations
+          cart_item = CartItems.objects.filter(user=user)
+          ex_var_list = []
+          id = []
+          for item in cart_item:
+            existing_variation = item.variations.all()
+            ex_var_list.append(list(existing_variation))
+            id.append(item.id)
+
+          for pr in product_variation:
+            if pr in ex_var_list:
+              index = ex_var_list.index(pr)
+              item_id = id[index]
+              item = CartItems.objects.get(id=item_id)
+              item.quantity += 1
+              item.user = user
+              item.save()
+            else:
+              cart_item = CartItems.objects.filter(cart=cart)
+              for item in cart_item:
+                item.user = user
+                item.save()
+      except:
+        pass
+      auth.login(request, user)
       return redirect("dashboard")
     else:
-      messages.error(request,"Invalid Login Credentials")
-  return render(request,'login.html')
+      messages.error(request, 'Invalid login credentials')
+      return redirect('login')
+  return render(request, 'login.html')
 
 @login_required(login_url='login')
 def logout(request):
