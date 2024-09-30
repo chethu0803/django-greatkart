@@ -7,6 +7,7 @@ from django.contrib import auth
 from django.contrib.auth.decorators import login_required
 from cart.models import Cart,CartItems
 from cart.views import _cart_id
+import requests
 #Email Verification
 from django.contrib.sites.shortcuts import get_current_site
 from django.template.loader import render_to_string
@@ -66,13 +67,13 @@ def login(request):
         if is_cart_item_exists:
           cart_item = CartItems.objects.filter(cart=cart)
 
-                    # Getting the product variations by cart id
+          # Getting the product variations by cart id
           product_variation = []
           for item in cart_item:
             variation = item.variations.all()
             product_variation.append(list(variation))
 
-                    # Get the cart items from the user to access his product variations
+          # Get the cart items from the user to access his product variations
           cart_item = CartItems.objects.filter(user=user)
           ex_var_list = []
           id = []
@@ -97,10 +98,19 @@ def login(request):
       except:
         pass
       auth.login(request, user)
-      return redirect("dashboard")
+      url=request.META.get("HTTP_REFERER")
+      try:
+        query=requests.utils.urlparse(url).query
+        params=dict(x.split('=') for x in query.split('&'))
+        if 'next' in params:
+          nextPage=params['next']
+          return redirect(nextPage)
+      except:
+        return redirect('dashboard')
     else:
       messages.error(request, 'Invalid login credentials')
       return redirect('login')
+    
   return render(request, 'login.html')
 
 @login_required(login_url='login')
