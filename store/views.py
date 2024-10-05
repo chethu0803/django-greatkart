@@ -1,10 +1,12 @@
-from django.shortcuts import render,get_object_or_404
-from .models import Product
+from django.shortcuts import render,get_object_or_404,redirect
+from .models import Product,ReviewRating
+from .forms import ReviewForm
 from category.models import Category
 from cart.models import Cart,CartItems
 from cart.views import _cart_id
 from django.db.models import Q
 from django.core.paginator import Paginator,EmptyPage,PageNotAnInteger
+from django.contrib import messages
 # Create your views here.
 def store(request,category_slug=None):
   try:
@@ -30,12 +32,14 @@ def product(request,category_slug,product_slug):
   try:
     product = Product.objects.get(category__slug=category_slug, slug=product_slug)
     in_cart = CartItems.objects.filter(cart__cart_id=_cart_id(request), product=product).exists()
+    reviews=ReviewRating.objects.filter(product=product,status=True)
   except Exception as e:
     raise e
   
   context={
     'product':product,
     'in_cart':in_cart,
+    'reviews':reviews
     }
   return render(request,'product.html',context)
 
@@ -49,3 +53,35 @@ def search(request):
     'products_count':products_count,
   }
   return render(request,'store.html',context)
+
+def submit_review(request,product_id):
+   product=Product.objects.get(id=product_id)
+   url=request.META.get("HTTP_REFERER")
+   if request.user.is_authenticated:
+    if request.method=="POST":
+        try:
+          review =ReviewRating.objects.get(user=request.user,product__id=product_id)
+          form=ReviewForm(request.POST,instance=review)
+          if form.is_valid():
+            form.save()
+            messages.success(request,"Thank You! Your review has been updated.")
+          return redirect(url)
+        except ReviewRating.DoesNotExist:
+          form=ReviewForm(request.POST)
+          if form.is_valid():
+              data=ReviewRating()
+              data.rating=form.cleaned_data['rating']
+              data.subject=form.cleaned_data['subject']
+              data.review=form.cleaned_data['review']
+              data.ip=request.META.get("REMOTE_ADDR")
+              data.user=request.user
+              data.product=product
+              data.save()
+              messages.success(request,"Thank You! Your Review has been submitted.")
+          return redirect(url)
+   else:
+      return redirect(url)
+
+
+
+
