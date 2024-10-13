@@ -4,14 +4,16 @@ from store.models import Product,Variation
 # Create your models here.
 class Payment(models.Model):
     user = models.ForeignKey(Account, on_delete=models.CASCADE)
-    payment_id = models.CharField(max_length=100)
+    razorpay_payment_id = models.CharField(max_length=100, null=True)
+    razorpay_order_id = models.CharField(max_length=100, null=True)
+    razorpay_signature = models.CharField(max_length=100, null=True)
     payment_method = models.CharField(max_length=100)
-    amount_paid = models.CharField(max_length=100) # this is the total amount paid
+    amount_paid = models.CharField(max_length=100, null=True) # this is the total amount paid
     status = models.CharField(max_length=100)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return self.payment_id
+        return self.razorpay_order_id
     
 class Order(models.Model):
     STATUS = (

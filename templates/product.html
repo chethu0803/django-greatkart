@@ -10,11 +10,19 @@
     <div class="row no-gutters">
       <aside class="col-md-6">
   <article class="gallery-wrap"> 
-    <div class="img-big-wrap">
-       <a href="#"><img src="{{product.images.url}}"></a>
+    <div class="img-big-wrap mainImage">
+       <center><img src="{{product.images.url}}"></center>
     </div> <!-- img-big-wrap.// -->
     
   </article> <!-- gallery-wrap .end// -->
+  <ul class='thumb'>
+    <li>
+      <a href="{{product.images.url}}" target="mainImage"><img src="{{product.images.url}}" alt="Product Main Image"></a>
+      {% for i in productGallery %}
+        <a href="{{i.image.url}}"><img src="{{i.image.url}}" alt="Product related images"></a>
+      {% endfor %}
+    </li>
+  </ul>
       </aside>
       <main class="col-md-6 border-left">
   <form action="{% url 'add_cart' product_id=product.id %}" method="POST">
@@ -23,6 +31,7 @@
   
       <h2 class="title">{{product.product_name}}</h2>
       <div class="rating-star">
+        {% if product.averageReview %}
         <span>
           <i class="fa fa-star{% if product.averageReview < 0.5 %}-o{% elif product.averageReview >= 0.5 and product.averageReview < 1 %}-half-o {% endif %}" aria-hidden="true"></i>
           <i class="fa fa-star{% if product.averageReview < 1.5 %}-o{% elif product.averageReview >= 1.5 and product.averageReview < 2 %}-half-o {% endif %}" aria-hidden="true"></i>
@@ -32,6 +41,10 @@
           &nbsp;
       <span>{{product.countReview}} reviews</span>
           </span>
+        {% else %}
+          <strong>No Reviews. Be the first one to review.</strong>
+        {% endif %}
+        
       </div>
       <br>
       <div class="mb-3"> 
@@ -140,6 +153,9 @@
           </div>
         </div> <!-- icontext.// -->
         <div class="mt-3">
+          <p>
+            {{review.subject}}
+          </p>	
           <p>
             {{review.review}}
           </p>	

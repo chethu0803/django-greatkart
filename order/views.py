@@ -1,8 +1,11 @@
 from django.shortcuts import render,redirect,HttpResponse
 from cart.models import CartItems
 from .forms import OrderForm
-from .models import Order
+from .models import Order,Payment
 import datetime
+import razorpay
+from greatkart.settings import RAZOR_PAY_ID,RAZOR_PAY_KEY
+from django.views.decorators.csrf import csrf_exempt
 # Create your views here.
 def placeorder(request):
   current_user=request.user
@@ -29,6 +32,7 @@ def placeorder(request):
       data=Order()
       data.user=current_user
       data.first_name=form.cleaned_data['first_name']
+      data.last_name=form.cleaned_data['last_name']
       data.email=form.cleaned_data['email']
       data.phone=form.cleaned_data['phone']
       data.address_line_1=form.cleaned_data['address_line_1']
@@ -53,17 +57,73 @@ def placeorder(request):
 
       order=Order.objects.get(user=current_user,order_number=order_number)
 
+      client = razorpay.Client(auth=(RAZOR_PAY_ID, RAZOR_PAY_KEY))
+      data={
+        'amount':int(grand_total*100),
+        'currency':'INR'
+      }
+      payment_order=client.order.create(data=data)
+      order_id=payment_order['id']
+      if payment_order['id']:
+        payment=Payment()
+        payment.user=request.user
+        payment.razorpay_order_id=payment_order['id']
+        payment.status=payment_order['status']
+        payment.save()
+        order.payment=payment
+        order.save()
+      
       context={
         'order':order,
         'tax':tax,
         'grand_total':grand_total,
         'total':total,
-        'cart_items':cart_items
+        'cart_items':cart_items,
+        'payment':payment,
+        'key':RAZOR_PAY_ID,
+        'order_id':order_id,
       }
       return render(request,'payments.html',context)
   else:
     return redirect('checkout')
   
-def payments(request):
-  return HttpResponse("OK")
+@csrf_exempt
+def payment_successfull(request):
+  if request.method=="POST":
+
+    payment=Payment.objects.get(razorpay_order_id=request.POST['razorpay_order_id'])
+    payment.razorpay_payment_id=request.POST['razorpay_payment_id']
+    payment.razorpay_signature=request.POST['razorpay_signature']
+
+    client = razorpay.Client(auth=(RAZOR_PAY_ID, RAZOR_PAY_KEY))
+    payment_order_id=payment.razorpay_order_id
+
+    try:
+      client.utility.verify_payment_signature({
+                'razorpay_order_id': payment_order_id,
+                'razorpay_payment_id': payment.razorpay_payment_id,
+                'razorpay_signature': payment.razorpay_signature,
+            })
+    except:
+      return HttpResponse("Payment verification failed", status=400)
+    
+    payment_details = client.payment.fetch(request.POST['razorpay_payment_id'])
+    payment_method = payment_details.get('method')
+    order=Order.objects.get(payment=payment)
+    order.is_ordered=True
+    order.status="Completed"
+    payment.amount_paid=order.order_total
+    payment.status='Completed'
+    payment.payment_method=payment_method
+    payment.save()
+    order.save()
+    sub_total=order.order_total-order.tax
+
+    context={
+      'order':order,
+      'sub_total':sub_total,
+     
+    }
+    return render(request,'order_detail.html',context)
+    
   

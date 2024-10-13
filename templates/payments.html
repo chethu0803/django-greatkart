@@ -87,6 +87,7 @@
           <hr>
           <p class="text-center mb-3">
             <img src="{% static 'images/misc/payments.png' %}" height="26">
+            <button id="rzp-button1">Pay</button>
           </p>
           
    
@@ -99,5 +100,29 @@
     </div> <!-- row.// -->
   </div>
 </section>
-
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+  var options = {
+      "key": "{{key}}", // Enter the Key ID generated from the Dashboard
+      "amount": "{{grand_total}}", // Amount is in currency subunits. Default currency is INR. Hence, 50000 refers to 50000 paise
+      "currency": "INR",
+      "name": "Great Kart", //your business name
+      "description": "Test Transaction",
+      "order_id": "{{order_id}}", //This is a sample Order ID. Pass the `id` obtained in the response of Step 1
+      "callback_url": "http://127.0.0.1:8000/orders/payment-successfull/",
+      "prefill": { //We recommend using the prefill parameter to auto-fill customer's contact information especially their phone number
+          "name": "{{order.full_name}}", //your customer's name
+          "email": "{{order.email}}",
+          "contact": "{{order.phone}}" //Provide the customer's phone number for better conversion rates 
+      },
+      "theme": {
+          "color": "#3399cc"
+      }
+  };
+  var rzp1 = new Razorpay(options);
+  document.getElementById('rzp-button1').onclick = function(e){
+      rzp1.open();
+      e.preventDefault();
+  }
+  </script>
 {% endblock content %}
