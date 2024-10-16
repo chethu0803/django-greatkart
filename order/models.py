@@ -68,3 +68,6 @@ class OrderProduct(models.Model):
 
     def __str__(self):
         return self.product.product_name
+    
+    def price(self):
+        return self.quantity*self.product_price

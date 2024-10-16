@@ -164,7 +164,7 @@
               
             </div>
           </div>
-          <a href="{% url 'add_cart' product_id=product.id %}" class="btn btn-block btn-primary">Add to cart </a>
+          <a href="{% url 'single_product' category_slug=product.category.slug product_slug=product.slug %}" class="btn btn-block btn-primary">View Details</a>
         </figcaption>
       </figure>
     </div> <!-- col.// -->

@@ -9,7 +9,7 @@ from cart.models import Cart,CartItems
 from cart.views import _cart_id
 from .forms import UserProfileForm,UserForm
 import requests
-from order.models import Order
+from order.models import Order,OrderProduct
 from django.db.models import Count
 #Email Verification
 from django.contrib.sites.shortcuts import get_current_site
@@ -272,10 +272,13 @@ def change_password(request):
 @login_required(login_url='login')
 def order_detail(request,order_id):
   order=Order.objects.get(order_number=order_id)
+  orderproducts=OrderProduct.objects.filter(user=request.user,order=order)
+
   sub_total=order.order_total-order.tax
   context={
     'order':order,
-    'sub_total':sub_total
+    'sub_total':sub_total,
+    'orderproducts':orderproducts,
   }
   return render(request,'order_detail.html',context)
 

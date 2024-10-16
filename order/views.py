@@ -1,11 +1,13 @@
 from django.shortcuts import render,redirect,HttpResponse
 from cart.models import CartItems
 from .forms import OrderForm
-from .models import Order,Payment
+from .models import Order,Payment,OrderProduct,Product
 import datetime
 import razorpay
 from greatkart.settings import RAZOR_PAY_ID,RAZOR_PAY_KEY
 from django.views.decorators.csrf import csrf_exempt
+from django.core.mail import EmailMessage
+from django.template.loader import render_to_string
 # Create your views here.
 def placeorder(request):
   current_user=request.user
@@ -116,13 +118,50 @@ def payment_successfull(request):
     payment.status='Completed'
     payment.payment_method=payment_method
     payment.save()
+    
     order.save()
     sub_total=order.order_total-order.tax
+    
+    #Move the items to OrderProduct 
+    cart_items=CartItems.objects.filter(user=request.user)
+    for item in cart_items:
+      orderproduct=OrderProduct()
+      orderproduct.order=order
+      orderproduct.payment=payment
+      orderproduct.user=request.user
+      orderproduct.quantity=item.quantity
+      orderproduct.product_price=item.product.price
+      orderproduct.product=item.product
+      orderproduct.ordered=True
+      orderproduct.save()
 
+      product_variation=item.variations.all()
+      orderproduct.variations.set(product_variation)
+      orderproduct.save()
+    
+
+      product=Product.objects.get(id=item.product.id)
+      product.stock-=item.quantity
+      product.save()
+
+    CartItems.objects.filter(user=request.user).delete()
+
+    mail_subject="Thank You for your order!"
+    message=render_to_string('order_received_email.html',{
+      'user':request.user,
+      'transID':request.POST['razorpay_payment_id'],
+      'order':order,
+    })
+    to_email=request.user.email
+    send_email=EmailMessage(mail_subject,message,to=[to_email])
+    send_email.send()
+    orderproducts=OrderProduct.objects.filter(user=request.user,payment=payment)
+    payment=True
     context={
       'order':order,
       'sub_total':sub_total,
-     
+      'payment':payment,
+      'orderproducts':orderproducts
     }
     return render(request,'order_detail.html',context)
     

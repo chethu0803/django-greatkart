@@ -1,0 +1,8 @@
+{% autoescape off %}
+  Hi {{user.first_name}},
+  
+  Your Order has been confirmed.
+
+  Order ID: {{order.order_number | capfirst}}
+  Transaction ID: {{transID}} (from RazorPay)
+{% endautoescape %}
