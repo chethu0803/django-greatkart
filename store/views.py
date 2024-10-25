@@ -7,6 +7,7 @@ from cart.views import _cart_id
 from django.db.models import Q
 from django.core.paginator import Paginator,EmptyPage,PageNotAnInteger
 from django.contrib import messages
+from order.models import OrderProduct
 # Create your views here.
 def store(request,category_slug=None):
   try:
@@ -37,12 +38,19 @@ def product(request,category_slug,product_slug):
   except Exception as e:
     raise e
   
+  product_ordered=None
+  if request.user.is_authenticated:    
+    try:
+      product_ordered=OrderProduct.objects.filter(user=request.user,product_id=product.id).exists()
+    except OrderProduct.DoesNotExist:
+      product_ordered=None
   context={
     'product':product,
     'in_cart':in_cart,
     'reviews':reviews,
-    'productGallery':productGallery
-    }
+    'productGallery':productGallery,
+    'product_ordered':product_ordered,
+  }
   return render(request,'product.html',context)
 
 def search(request):
