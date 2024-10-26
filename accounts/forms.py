@@ -1,6 +1,6 @@
 from django import forms
 from .models import Account,UserProfile
-
+from cloudinary.forms import CloudinaryFileField
 class RegistrationForm(forms.ModelForm):
   password=forms.CharField(widget=forms.PasswordInput(attrs={
     'placeholder':"Enter Password",
@@ -45,12 +45,23 @@ class UserForm(forms.ModelForm):
             self.fields[field].widget.attrs['class'] = 'form-control'
 
 class UserProfileForm(forms.ModelForm):
-  profile_picture = forms.ImageField(required=False, error_messages = {'invalid':("Image files only")}, widget=forms.FileInput)
+  profile_pic = CloudinaryFileField(
+    widget=forms.ClearableFileInput(attrs={'class': 'form-control'}),
+    options={
+      'folder': 'user_profiles',  # replace with your desired folder path
+      'tags': 'user_picture',
+      'format': 'png',
+    },
+    required=False 
+  )
+
   class Meta:
     model=UserProfile
-    fields=['address_line_1','address_line_2','city','state','country','profile_picture']
+    fields=['address_line_1','address_line_2','city','state','country','profile_pic']
+   
 
   def __init__(self, *args, **kwargs):
-      super(UserProfileForm, self).__init__(*args, **kwargs)
-      for field in self.fields:
-        self.fields[field].widget.attrs['class'] = 'form-control'
+    super(UserProfileForm, self).__init__(*args, **kwargs)
+    for field in self.fields:
+      self.fields[field].widget.attrs['class'] = 'form-control'
+      

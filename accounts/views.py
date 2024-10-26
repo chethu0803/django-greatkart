@@ -18,6 +18,8 @@ from django.utils.http import urlsafe_base64_encode,urlsafe_base64_decode
 from django.utils.encoding import force_bytes
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import EmailMessage
+import cloudinary
+import cloudinary.api
 # Create your views here.
 def register(request):
   if request.method=="POST":
@@ -27,7 +29,7 @@ def register(request):
       last_name=form.cleaned_data['last_name']
       email=form.cleaned_data['email']
       phone_num=form.cleaned_data['phone_number']
-      password=form.cleaned_data['first_name']
+      password=form.cleaned_data['password']
       username=email.split('@')[0]
       user=Account.objects.create_user(first_name=first_name,last_name=last_name,email=email,password=password,username=username)
       user.phone_number=phone_num
@@ -35,8 +37,9 @@ def register(request):
       messages.success(request,"Registration Successful.")
 
       profile=UserProfile()
-      profile.user=request.user
-      profile.profile_picture='default/img_avatar.png'
+      profile.user_id=user.id
+      default_pic=cloudinary.api.resource_by_asset_id("39deff3aa17393db3ed4cdde26ef428f")
+      profile.profile_picture=default_pic['secure_url']
       profile.save()
       
       #Email Verification
@@ -145,8 +148,8 @@ def activate(request,uidb64,token):
   
 @login_required(login_url='login')
 def dashboard(request):
-  user_profile=UserProfile.objects.get(user=request.user)
-  count=Order.objects.filter(user=request.user,is_ordered=True).aggregate(count=Count('id'))
+  user_profile=UserProfile.objects.get(user_id=request.user.id)
+  count=Order.objects.filter(user_id=request.user.id,is_ordered=True).aggregate(count=Count('id'))
   orders_count=count['count']
   context={
     'user_profile':user_profile,
@@ -225,7 +228,7 @@ def my_orders(request):
 @login_required(login_url='login')
 def edit_profile(request):
   try:
-    userprofile=UserProfile.objects.get(user=request.user)
+    userprofile=UserProfile.objects.get(user_id=request.user.id)
   except:
     pass
   if request.method=="POST":
@@ -233,7 +236,10 @@ def edit_profile(request):
     profile_form=UserProfileForm(request.POST,request.FILES,instance=userprofile)
     if user_form.is_valid() and profile_form.is_valid():
       user_form.save()
+      if profile_form.cleaned_data['profile_pic']:
+        userprofile.profile_picture=profile_form.cleaned_data['profile_pic']
       profile_form.save()
+      userprofile.save()
       messages.success(request,'Your Profile has been Updated.')
       return redirect('edit_profile')
   else:

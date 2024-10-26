@@ -128,7 +128,7 @@ def add_cart(request,product_id):
   return render(request,'product.html',{'product':product})
 
 
-def cart(request,total=0,quantity=0,tax=0,cart_items=None):
+def cart(request,total=0,quantity=0,tax=0,cart_items=None,grand_total=0):
   if request.user.is_authenticated:
     try:
       cart_items=CartItems.objects.filter(user=request.user,is_active=True)

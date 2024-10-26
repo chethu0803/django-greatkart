@@ -2,13 +2,14 @@ from django.db import models
 from category.models import Category
 from accounts.models import Account
 from django.db.models import Avg, Count
+from cloudinary.models import CloudinaryField
 # Create your models here.
 class Product(models.Model):
   product_name=models.CharField(max_length=200,unique=True)
   slug=models.SlugField(max_length=200,unique=True)
   price=models.IntegerField()
   description=models.TextField(max_length=400,blank=True)
-  images=models.ImageField(upload_to='photos/products')
+  images=CloudinaryField('image', folder='admin_uploads/Products',tags='Product')
   stock=models.IntegerField()
   is_available=models.BooleanField(default=True)
   created_date=models.DateTimeField(auto_now_add=True)
@@ -73,7 +74,7 @@ class ReviewRating(models.Model):
   
 class ProductGallery(models.Model):
   product=models.ForeignKey(Product,on_delete=models.CASCADE,default=None)
-  image=models.ImageField(upload_to="store/products",max_length=255)
+  image=CloudinaryField('image', folder='admin_uploads/Product_Gallery',tags='gallery_pic')
 
   def __str__(self):
     return self.product.product_name
