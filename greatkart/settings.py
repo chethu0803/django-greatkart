@@ -33,7 +33,7 @@ if not DEBUG:
 
 
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['blue-moon-l411.onrender.com','localhost']
 
 
 # Application definition
